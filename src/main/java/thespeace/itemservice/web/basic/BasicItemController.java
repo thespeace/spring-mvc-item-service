@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import thespeace.itemservice.domain.item.Item;
 import thespeace.itemservice.repository.ItemRepository;
 
@@ -112,10 +113,41 @@ public class BasicItemController {
      * {@code @ModelAttribute} 자체도 생략가능하다. 기본 타입이 아니라 우리가 만든 임의의
      * 대상 객체는 자동으로 @ModelAttribute가 적용되면서 모델에 자동 등록된다. 나머지 사항은 기존과 동일.
      */
-    @PostMapping("/add")
+    //@PostMapping("/add") //이전 코드의 매핑 주석처리!
     public String addItemV4( Item item) {
         itemRepository.save(item);
         return "basic/item";
+    }
+
+    /**
+     * <h2>PRG(Post/Redirect/get)</h2>
+     * 웹 브라우저의 새로 고침은 마지막에 서버에 전송한 데이터를 다시 전송한다.<br>
+     * 새로 고침 문제를 해결하려면 상품 저장 후에 뷰 템플릿으로 이동하는 것이 아니라, 상품 상세 화면으로 리다이렉트를
+     * 호출해주면 된다.<br><br>
+     *
+     * *주의 : {@code "redirect:/basic/items/" + item.getId()} redirect에서 {@code +item.getId()}처럼 URL에 변수를
+     * 더해서 사용하는 것은 URL 인코딩이 안되기 때문에 위험하다. 다음에 설명하는 {@code RedirectAttributes}를 사용하자.
+     */
+    //@PostMapping("/add") //이전 코드의 매핑 주석처리!
+    public String addItemV5(Item item) {
+        itemRepository.save(item);
+        return "redirect:/basic/items/" + item.getId();
+    }
+
+    /**
+     * <h2>RedirectAttributes</h2>
+     * <ul>RedirectAttributes 를 사용하면 URL 인코딩도 해주고, pathVariable , 쿼리 파라미터까지 처리해준다.
+     *     <li>redirect:/basic/items/{itemId}</li>
+     *     <li>pathVariable 바인딩: {itemId}</li>
+     *     <li>나머지는 쿼리 파라미터로 처리: ?status=true</li>
+     * </ul>
+     */
+    @PostMapping("/add")
+    public String addItemV6(Item item, RedirectAttributes redirectAttributes) {
+        Item savedItem = itemRepository.save(item);
+        redirectAttributes.addAttribute("itemId", savedItem.getId());
+        redirectAttributes.addAttribute("status", true);
+        return "redirect:/basic/items/{itemId}"; //redirectAttributes에 넣은 변수를 치환해서 사용 가능.
     }
 
     @GetMapping("/{itemId}/edit")
